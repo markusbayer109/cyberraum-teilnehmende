@@ -1,0 +1,4 @@
+workshop.env
+*.tar
+*.tar.gz
+*.tar.zst

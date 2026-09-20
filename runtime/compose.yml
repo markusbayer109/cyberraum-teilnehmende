@@ -1,0 +1,147 @@
+name: cyberraum-workshop
+
+services:
+  juice-shop:
+    image: ${JUICE_SHOP_IMAGE:-bkimminich/juice-shop:v20.0.0}
+    pull_policy: missing
+    init: true
+    networks:
+      - target_net
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 256
+    mem_limit: 2g
+    healthcheck:
+      test: ["CMD", "/nodejs/bin/node", "-e", "const request=require('http').get('http://127.0.0.1:3000/',response=>{response.resume();process.exit(response.statusCode>=200&&response.statusCode<500?0:1)});request.on('error',()=>process.exit(1));request.setTimeout(2000,()=>{request.destroy();process.exit(1)})"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+
+  browser-gateway:
+    image: ${CAI_IMAGE:?CAI_IMAGE fehlt in runtime/workshop.defaults.env}
+    pull_policy: missing
+    command: ["python", "/opt/workshop-browser/browser_gateway.py"]
+    environment:
+      UPSTREAM_HOST: juice-shop
+      UPSTREAM_PORT: "3000"
+      LISTEN_PORT: "8081"
+    ports:
+      - "127.0.0.1:${JUICE_SHOP_PORT:-3000}:8081"
+    volumes:
+      - ./browser_gateway.py:/opt/workshop-browser/browser_gateway.py:ro
+    depends_on:
+      juice-shop:
+        condition: service_healthy
+    networks:
+      - target_net
+      - browser_net
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 64
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8081/healthz', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  model-gateway:
+    image: ${CAI_IMAGE:?CAI_IMAGE fehlt in runtime/workshop.defaults.env}
+    pull_policy: missing
+    command: ["model-gateway"]
+    environment:
+      MODEL_PROVIDER: ${LLM_PROVIDER:-${MODEL_PROVIDER:-litellm}}
+      LITELLM_BASE_URL: ${LITELLM_BASE_URL:-https://llm-service.ai.tu-darmstadt.de/v1}
+      LITELLM_API_KEY: ${LITELLM_API_KEY:-}
+      OPENROUTER_API_BASE: ${OPENROUTER_API_BASE:-https://openrouter.ai/api/v1}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_HTTP_REFERER: ${OPENROUTER_HTTP_REFERER:-}
+      OPENROUTER_APP_TITLE: ${OPENROUTER_APP_TITLE:-Studienstiftung Cyberraum Workshop}
+      MODEL_GATEWAY_MAX_BYTES: ${MODEL_GATEWAY_MAX_BYTES:-20971520}
+      MODEL_GATEWAY_TIMEOUT: ${MODEL_GATEWAY_TIMEOUT:-240}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - model_net
+      - egress_net
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,noexec,size=64m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 128
+    mem_limit: 512m
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  cai:
+    image: ${CAI_IMAGE:?CAI_IMAGE fehlt in runtime/workshop.defaults.env}
+    pull_policy: missing
+    stdin_open: true
+    tty: true
+    working_dir: /workshop/workspace
+    environment:
+      MODEL_PROVIDER: ${LLM_PROVIDER:-${MODEL_PROVIDER:-litellm}}
+      LITELLM_MODEL: ${LITELLM_MODEL:-GLM-5.2-AWQ-INT4}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-}
+      CAI_MODEL: ${CAI_MODEL:-}
+      CAI_LLM_PROVIDER: litellm
+      LITELLM_BASE_URL: http://model-gateway:8080/v1
+      LITELLM_API_KEY: workshop-client
+      CAI_FORCE_HTTPX: "true"
+      CAI_LICENSE_OFF: "1"
+      CAI_SKIP_UPDATE_CHECK: "1"
+      CAI_TELEMETRY: "false"
+      CAI_TRACING: "false"
+      CAI_FETCH_ALLOW_INTERNAL: "true"
+      CAI_STREAM: "false"
+      CAI_MAX_TURNS: ${CAI_MAX_TURNS:-20}
+      CAI_MAX_INTERACTIONS: ${CAI_MAX_INTERACTIONS:-40}
+      CAI_TOOL_TIMEOUT: ${CAI_TOOL_TIMEOUT:-90}
+      CAI_PRICE_LIMIT: ${CAI_PRICE_LIMIT:-1}
+      TARGET_BASE_URL: http://juice-shop:3000
+      PROMPT_TOOLKIT_NO_CPR: "1"
+    depends_on:
+      juice-shop:
+        condition: service_healthy
+      model-gateway:
+        condition: service_healthy
+    networks:
+      - target_net
+      - model_net
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,noexec,size=256m
+    volumes:
+      - cai_home:/home/cai
+      - cai_workspace:/workshop/workspace
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 256
+    mem_limit: 4g
+    cpus: 2
+
+networks:
+  target_net:
+    internal: true
+  model_net:
+    internal: true
+  egress_net: {}
+  browser_net: {}
+
+volumes:
+  cai_home: {}
+  cai_workspace: {}
