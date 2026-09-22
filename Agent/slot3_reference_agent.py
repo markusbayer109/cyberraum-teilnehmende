@@ -25,7 +25,7 @@ DEFAULT_TARGET_BASE_URL = os.getenv(
 )
 ALLOWED_TARGET_HOSTS = {"127.0.0.1", "localhost"}
 ALLOWED_TARGET_PORT = 3000
-MAX_STEPS = 10
+MAX_STEPS = 100
 MAX_BODY_CHARS = 4000
 MAX_MODEL_ATTEMPTS = 3
 
@@ -237,6 +237,25 @@ def error_observation(error_type: str, message: str) -> str:
     )
 
 
+def describe_action(action: dict[str, Any]) -> str:
+    """Fasst eine Werkzeugaktion in einer kurzen Konsolenzeile zusammen."""
+    reason = action["reason"].strip()
+    if action["type"] == "http_post":
+        body = json.dumps(action["json_body"], ensure_ascii=False)
+        return f"POST {action['path']} {body} · {reason}"
+    return f"GET {action['path']} · {reason}"
+
+
+def summarize_observation(observation: str) -> str:
+    """Kürzt die Observation für den Menschen auf Status oder Fehler."""
+    data = json.loads(observation)
+    if data.get("tool") == "http":
+        response = data["response"]
+        note = " (gekürzt)" if response["truncated"] else ""
+        return f"→ {response['status_code']} {response['content_type']}{note}"
+    return f"! {data['type']}: {data['message']}"
+
+
 def store_step(
     messages: list[dict[str, str]],
     model_output: str,
@@ -262,23 +281,25 @@ def run_agent(goal: str, target_base_url: str) -> str:
     ]
     previous_action_key: str | None = None
 
-    print(f"Freigegebene Zielanwendung: {target_base_url}")
+    print(f"Ziel: {target_base_url}")
 
     for step in range(1, MAX_STEPS + 1):
-        print(f"\n--- Schritt {step}/{MAX_STEPS} ---")
         model_output = call_model(messages)
-        print(f"Modell: {model_output}")
 
         try:
             action = parse_action(model_output)
         except ValueError as error:
             observation = error_observation("action_error", str(error))
-            print(f"Observation: {observation}")
+            print(f"[{step}] ungültige Modellantwort")
+            print(f"    {summarize_observation(observation)}")
             store_step(messages, model_output, observation)
             continue
 
         if action["type"] == "finish":
+            print(f"[{step}] finish · {action['reason'].strip()}")
             return action["answer"]
+
+        print(f"[{step}] {describe_action(action)}")
 
         current_action_key = action_key(action)
         if current_action_key == previous_action_key:
@@ -286,7 +307,7 @@ def run_agent(goal: str, target_base_url: str) -> str:
                 "repeated_action",
                 "Derselbe Werkzeugaufruf wurde unmittelbar zuvor ausgeführt.",
             )
-            print(f"Observation: {observation}")
+            print(f"    {summarize_observation(observation)}")
             store_step(messages, model_output, observation)
             continue
 
@@ -297,7 +318,7 @@ def run_agent(goal: str, target_base_url: str) -> str:
         else:
             previous_action_key = current_action_key
 
-        print(f"Observation: {observation}")
+        print(f"    {summarize_observation(observation)}")
         store_step(messages, model_output, observation)
 
     raise RuntimeError(f"Schrittlimit von {MAX_STEPS} erreicht.")

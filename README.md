@@ -1,8 +1,18 @@
 # AG Cyberraum: Workshopmaterialien
 
-Dieses Repository erhält Code und Arbeitsmaterialien schrittweise passend zum
-Workshopablauf. Die Lehrenden nennen jeweils den Zeitpunkt für die nächste
-Freigabe.
+Alle Teilnehmermaterialien des Workshops sind jetzt freigegeben. Ihr findet
+hier die Aufgaben, Starter und Referenzlösungen, die CAI-Laufzeit sowie die
+Folien und Materialien zur Nachbereitung.
+
+## Materialien
+
+- [Aufgabenblatt](Challenges/Aufgabenblatt.md) und [druckbare Aufgabenblätter](Challenges/Druck/)
+- [Eigener ReAct-Agent](Agent/README.md), [Slot-2-Referenz](Agent/slot2_reference_agent.py), [minimale Slot-3-Lösung](Agent/slot3_solution_minimal.py) und [erweiterter Slot-3-Referenzagent](Agent/slot3_reference_agent.py)
+- [CAI-Laufzeit](CAI-Laufzeit.md) und [Compose-Konfiguration](runtime/compose.yml)
+- LLM-Cheatsheet als [Markdown](LLM-Dienst-Cheatsheet.md) oder [PDF](LLM-Dienst-Cheatsheet.pdf)
+- [Alle sieben Foliensätze](Slides/)
+- [Vertiefungsmaterial](Background/Vertiefungsmaterial.md) und [Hintergrundberichte](Background/)
+- Slot 6: [Erstbericht](Challenges/Slot-6-Incident-Response-Neuentwurf/01-Erstbericht-Analyseagent.md), [Analyseausgabe](Challenges/Slot-6-Incident-Response-Neuentwurf/02-Analyseausgabe-Agent.md) und [Rohereignisse mit Laufzeitaudit](Challenges/Slot-6-Incident-Response-Neuentwurf/03-Rohereignisse.md)
 
 ## Aktualisieren
 
@@ -12,14 +22,12 @@ Speichert eure Änderungen im Editor und führt dann im Repository aus:
 git pull --ff-only
 ```
 
-Jede Freigabe fügt nur neue Dateien hinzu. Eure bereits bearbeiteten
-Starterdateien werden nicht überschrieben. Erstellt bis zur letzten Freigabe
-keine lokalen Git-Commits. Falls ein Pull abgelehnt wird, verwendet weder
-`git reset` noch `git checkout`, sondern bittet die Lehrenden um Unterstützung.
-
-Bei einem Ausfall der Git-Bereitstellung erhaltet ihr dieselben Freigaben als
-kleine ZIP-Dateien. Entpackt immer nur die aktuell genannte Datei in dieses
-Arbeitsverzeichnis.
+Die Abschlussfreigabe enthält auch Aktualisierungen an bereits ausgegebenen
+Agentendateien. Wenn Git wegen eigener Änderungen den Pull ablehnt, sichert
+eure Arbeit zunächst mit einem lokalen Commit oder `git stash`. Lokale Commits
+müssen gegebenenfalls mit dem aktuellen Remote-Stand zusammengeführt werden;
+eigene Änderungen werden nicht mit `git reset` oder `git checkout` verworfen.
+Wendet euch bei Fragen an die Lehrenden.
 
 ## Vor dem Workshop: Laufzeit über Compose vorbereiten
 
@@ -48,18 +56,17 @@ passendes Docker-Archiv und die Importanleitung von den Lehrenden.
 ## Einstieg
 
 Das vollständige Aufgabenblatt liegt in `Challenges/Aufgabenblatt.md`. Die
-Vorbereitung ist darin bereits vor dem Workshop beschrieben. `Agent/README.md`
-und der erste Startercode kommen zu Beginn von Slot 2 hinzu.
+Vorbereitung und Startbefehle für den eigenen Agenten stehen zusätzlich in
+`Agent/README.md`.
 
 Die vorbereitete CAI-Laufzeit wird in Slot 4 verwendet. Git liefert die
 Compose-Dateien und die Startanleitung; Compose lädt die Images aus der
 Registry. Ein bereitgestelltes Docker-Archiv dient als Offline-Fallback.
 
-In Slot 6 kommen zu Beginn von Aufgabe 1, 2 und 3 jeweils der Erstbericht,
-die Analyseausgabe und die Rohereignisse samt Laufzeitaudit hinzu. Ruft nach
-jeder angekündigten Freigabe den aktuellen Stand ab und öffnet die in der
-jeweiligen Aufgabe verlinkte Datei unter
-`Challenges/Slot-6-Incident-Response-Neuentwurf/`.
+Für Slot 6 liegen Erstbericht, Analyseausgabe und Rohereignisse samt
+Laufzeitaudit vollständig unter
+`Challenges/Slot-6-Incident-Response-Neuentwurf/`. Öffnet die im jeweiligen
+Aufgabenteil verlinkte Datei.
 
 Wechselt für die Python-Aufgaben in das Verzeichnis `Agent`:
 

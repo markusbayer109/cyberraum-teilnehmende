@@ -124,7 +124,26 @@ def run_agent(goal: str) -> str:
     # TODO 1: Query-Schritt: Lege den Zustand als Nachrichtenliste an.
     # Er soll den SYSTEM_PROMPT und eine User-Nachricht mit Ziel und erster
     # Observation enthalten. Erste Observation: "Noch keine Webseite abgerufen."
-    # Schaut euch das messages Format unter
+    #
+    # Nachrichtenformat (Chat Completions, so erwarten es OpenAI und LiteLLM):
+    # ``messages`` ist eine Liste. Jedes Element ist ein Dict mit genau den
+    # Schlüsseln "role" und "content" (beide Strings). Es gibt drei Rollen:
+    #   - "system":    Grundregeln und Antwortformat, hier der SYSTEM_PROMPT.
+    #   - "user":      Eingaben an das Modell, hier das Ziel und später jede
+    #                  neue Observation.
+    #   - "assistant": die Antworten des Modells, in TODO 5 zurückgeschrieben.
+    # Die ReAct-"Observation" ist KEINE eigene Rolle. Sie wird als "user"-
+    # Nachricht in den Verlauf gelegt (siehe TODO 5). Genau diese Liste geht
+    # unverändert an ``call_model`` und damit an das Modell.
+    #
+    # Aufbau (Platzhalter, nur zur Form, nicht die Lösung):
+    #   messages = [
+    #       {"role": "system", "content": "<Grundregeln>"},
+    #       {"role": "user", "content": "<erste Eingabe>"},
+    #   ]
+    # Nach einem Schritt kommen in TODO 5 hinzu:
+    #       {"role": "assistant", "content": "<Modellantwort als JSON-String>"},
+    #       {"role": "user", "content": "<nächste Observation>"},
     messages: list[dict[str, str]] = []
 
     for step in range(1, MAX_STEPS + 1):
